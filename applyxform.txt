@@ -1,0 +1,45 @@
+
+# apply transformation matrix (rigid body transformation) script
+# assumes data are in XROMM/XMALab RBT format
+# written by J.D. Laurence-Chasen, 01/26/2021
+
+import bpy
+import numpy as np
+from numpy import genfromtxt
+
+
+# selected object
+obj = bpy.context.object
+
+# read in RBT
+rbt = genfromtxt('C:/Users/jdlc7/Documents/PhD/Code/Blender_functions/ye_mandible_rbt.csv', delimiter=',')
+
+
+# get rid of header row
+rbt = rbt[1:len(rbt),:]
+
+nframes = len(rbt)
+activeframes = []
+
+# loop through frames
+for i in range(nframes):
+    
+    # go to current frame
+    bpy.context.scene.frame_set(i+1)
+    # get transformation matrix for current frame (reformat to 4x4 from 1x16)
+    tmp_tm = np.reshape(rbt[i],[4, 4])
+    # if there is data for this frame
+    if not np.isnan(tmp_tm[0,0]):
+        #log frame
+        activeframes = activeframes + [i]
+        # position object
+        bpy.context.object.matrix_world = tmp_tm
+        # set keyframe
+        obj.keyframe_insert(data_path ="location", frame=i+1)
+        obj.keyframe_insert(data_path ="rotation_euler", frame=i+1)
+        
+        
+# set start and end frame range
+
+bpy.context.scene.frame_start = activeframes[0]
+bpy.context.scene.frame_end = activeframes[len(activeframes)-1]
